@@ -69,7 +69,7 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.PROPERTY,
-        property = "type")
+        property = "class")
 @JsonSubTypes(
         {
                 @JsonSubTypes.Type(value = VirtualConnection.class, name = "VirtualConnection")
@@ -84,6 +84,35 @@ public class Connection extends Referenceable
     protected ConnectorType       connectorType     = null;
     protected Endpoint            endpoint          = null;
     protected Map<String, Object> securedProperties = null;
+
+
+    /**
+     * Return the standard type for a connection type.
+     *
+     * @return ElementType object
+     */
+    public static ElementType getConnectionType()
+    {
+        final String        elementTypeId                   = "114e9f8f-5ff3-4c32-bd37-a7eb42712253";
+        final String        elementTypeName                 = "Connection";
+        final long          elementTypeVersion              = 1;
+        final String        elementTypeDescription          = "A set of properties to identify and configure a connector instance.";
+        final String        elementAccessServiceURL         = null;
+        final ElementOrigin elementOrigin                   = ElementOrigin.LOCAL_COHORT;
+        final String        elementHomeMetadataCollectionId = null;
+
+        ElementType elementType = new ElementType();
+
+        elementType.setElementTypeId(elementTypeId);
+        elementType.setElementTypeName(elementTypeName);
+        elementType.setElementTypeVersion(elementTypeVersion);
+        elementType.setElementTypeDescription(elementTypeDescription);
+        elementType.setElementSourceServer(elementAccessServiceURL);
+        elementType.setElementOrigin(elementOrigin);
+        elementType.setElementHomeMetadataCollectionId(elementHomeMetadataCollectionId);
+
+        return elementType;
+    }
 
 
     /**

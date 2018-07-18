@@ -2,7 +2,8 @@
 package org.odpi.openmetadata.adapters.adminservices.configurationstore.file;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.odpi.openmetadata.adminservices.store.OMAGServerConfigStoreConnectorBase;
 import org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties;
 import org.odpi.openmetadata.frameworks.connectors.properties.EndpointProperties;
@@ -27,7 +28,7 @@ public class FileBasedServerConfigStoreConnector extends OMAGServerConfigStoreCo
     /*
      * Variables used for logging and debug.
      */
-    private static final Logger log = Logger.getLogger(FileBasedServerConfigStoreConnector.class);
+    private static final Logger log = LoggerFactory.getLogger(FileBasedServerConfigStoreConnector.class);
 
 
     /**
@@ -68,10 +69,7 @@ public class FileBasedServerConfigStoreConnector extends OMAGServerConfigStoreCo
 
         try
         {
-            if (log.isDebugEnabled())
-            {
-                log.debug("Writing server config store properties: " + omagServerConfig);
-            }
+            log.debug("Writing server config store properties: " + omagServerConfig);
 
             if (omagServerConfig == null)
             {
@@ -88,10 +86,7 @@ public class FileBasedServerConfigStoreConnector extends OMAGServerConfigStoreCo
         }
         catch (IOException   ioException)
         {
-            if (log.isDebugEnabled())
-            {
-                log.debug("Unusable Server config Store :(", ioException);
-            }
+            log.debug("Unusable Server config Store :(", ioException);
         }
     }
 
@@ -124,11 +119,7 @@ public class FileBasedServerConfigStoreConnector extends OMAGServerConfigStoreCo
             /*
              * The config file is not found, create a new one ...
              */
-
-            if (log.isDebugEnabled())
-            {
-                log.debug("New server config Store", ioException);
-            }
+            log.debug("New server config Store", ioException);
 
             newConfigProperties = new OMAGServerConfig();
         }
@@ -153,9 +144,6 @@ public class FileBasedServerConfigStoreConnector extends OMAGServerConfigStoreCo
      */
     public void disconnect()
     {
-        if (log.isDebugEnabled())
-        {
-            log.debug("Closing Config Store.");
-        }
+        log.debug("Closing Config Store.");
     }
 }

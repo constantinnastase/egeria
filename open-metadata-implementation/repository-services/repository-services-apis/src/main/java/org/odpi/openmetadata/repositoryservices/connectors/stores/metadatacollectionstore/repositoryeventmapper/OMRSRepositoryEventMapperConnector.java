@@ -1,17 +1,34 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 package org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryeventmapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.odpi.openmetadata.frameworks.connectors.Connector;
 import org.odpi.openmetadata.frameworks.connectors.ConnectorBase;
+import org.odpi.openmetadata.frameworks.connectors.VirtualConnectorExtension;
 import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException;
+import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditCode;
+import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditLog;
+import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditingComponent;
+import org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicConnector;
+import org.odpi.openmetadata.repositoryservices.connectors.openmetadatatopic.OpenMetadataTopicListener;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryConnector;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryHelper;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.repositoryconnector.OMRSRepositoryValidator;
+import org.odpi.openmetadata.repositoryservices.ffdc.OMRSErrorCode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * OMRSRepositoryEventMapperBase provides a base class for implementors of OMRSRepositoryEventMapper.
  */
-public abstract class OMRSRepositoryEventMapperConnector extends ConnectorBase implements OMRSRepositoryEventMapper
+public abstract class OMRSRepositoryEventMapperConnector extends ConnectorBase implements OMRSRepositoryEventMapper,
+                                                                                          OpenMetadataTopicListener
 {
+    private static final Logger       log           = LoggerFactory.getLogger(OMRSRepositoryEventMapperConnector.class);
+    private static final OMRSAuditLog auditLog      = new OMRSAuditLog(OMRSAuditingComponent.LOCAL_REPOSITORY_EVENT_MAPPER);
+
     protected OMRSRepositoryEventProcessor repositoryEventProcessor  = null;
     protected String                       repositoryEventMapperName = null;
     protected OMRSRepositoryConnector      repositoryConnector       = null;
@@ -21,6 +38,10 @@ public abstract class OMRSRepositoryEventMapperConnector extends ConnectorBase i
     protected String                       localServerName           = null;
     protected String                       localServerType           = null;
     protected String                       localOrganizationName     = null;
+
+
+    private List<OpenMetadataTopicConnector> eventBusConnectors = new ArrayList<>();
+
 
     /**
      * Default constructor for OCF ConnectorBase.
@@ -137,6 +158,38 @@ public abstract class OMRSRepositoryEventMapperConnector extends ConnectorBase i
     public void start() throws ConnectorCheckedException
     {
         super.start();
+
+        final String            methodName = "start";
+
+        if (this.eventBusConnectors.isEmpty())
+        {
+            OMRSErrorCode errorCode = OMRSErrorCode.NO_EVENT_BUS_CONNECTORS;
+            String        errorMessage = errorCode.getErrorMessageId()
+                                       + errorCode.getFormattedErrorMessage(repositoryEventMapperName);
+
+            throw new ConnectorCheckedException(errorCode.getHTTPErrorCode(),
+                                                this.getClass().getName(),
+                                                methodName,
+                                                errorMessage,
+                                                errorCode.getSystemAction(),
+                                                errorCode.getUserAction());
+        }
+        else
+        {
+            for (OpenMetadataTopicConnector eventBusConnector : eventBusConnectors)
+            {
+                eventBusConnector.start();
+            }
+
+            OMRSAuditCode auditCode = OMRSAuditCode.EVENT_MAPPER_LISTENER_STARTED;
+            auditLog.logRecord(methodName,
+                               auditCode.getLogMessageId(),
+                               auditCode.getSeverity(),
+                               auditCode.getFormattedLogMessage(repositoryEventMapperName),
+                               this.getConnection().toString(),
+                               auditCode.getSystemAction(),
+                               auditCode.getUserAction());
+        }
     }
 
 
@@ -147,6 +200,22 @@ public abstract class OMRSRepositoryEventMapperConnector extends ConnectorBase i
      */
     public  void disconnect() throws ConnectorCheckedException
     {
+        final String            methodName = "disconnect";
+
         super.disconnect();
+
+        for (OpenMetadataTopicConnector eventBusConnector : eventBusConnectors)
+        {
+            eventBusConnector.disconnect();
+        }
+
+        OMRSAuditCode auditCode = OMRSAuditCode.EVENT_MAPPER_LISTENER_DISCONNECTED;
+        auditLog.logRecord(methodName,
+                           auditCode.getLogMessageId(),
+                           auditCode.getSeverity(),
+                           auditCode.getFormattedLogMessage(repositoryEventMapperName),
+                           this.getConnection().toString(),
+                           auditCode.getSystemAction(),
+                           auditCode.getUserAction());
     }
 }

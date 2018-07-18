@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 package org.odpi.openmetadata.repositoryservices.metadatahighway;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException;
 import org.odpi.openmetadata.adminservices.configuration.properties.OpenMetadataEventProtocolVersion;
 import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditCode;
@@ -36,7 +37,7 @@ public class OMRSCohortManager
 
     private static final OMRSAuditLog auditLog = new OMRSAuditLog(OMRSAuditingComponent.COHORT_MANAGER);
 
-    private static final Logger log = Logger.getLogger(OMRSCohortManager.class);
+    private static final Logger log = LoggerFactory.getLogger(OMRSCohortManager.class);
 
 
     /**
@@ -66,7 +67,6 @@ public class OMRSCohortManager
      * @param cohortRegistryStore the cohort registry store where details of members of the cohort are kept
      * @param cohortTopicConnector Connector to the cohort's OMRS Topic.
      * @param enterpriseTopicConnector Connector to the federated OMRS Topic.
-     * @param eventProtocolVersion Protocol to use for events to the cohort.
      * @param inboundEventExchangeRule rule for processing inbound events.
      */
     public void initialize(String                           cohortName,
@@ -80,15 +80,11 @@ public class OMRSCohortManager
                            OMRSTopicConnector               enterpriseTopicConnector,
                            OMRSCohortRegistryStore          cohortRegistryStore,
                            OMRSTopicConnector               cohortTopicConnector,
-                           OpenMetadataEventProtocolVersion eventProtocolVersion,
                            OMRSRepositoryEventExchangeRule  inboundEventExchangeRule)
     {
         final String   actionDescription = "Initialize Cohort Manager";
 
-        if (log.isDebugEnabled())
-        {
-            log.debug(actionDescription);
-        }
+        log.debug(actionDescription);
 
         try
         {
@@ -120,7 +116,6 @@ public class OMRSCohortManager
              * Create an event publisher for the cohort registry to use to send registration requests.
              */
             OMRSEventPublisher outboundRegistryEventProcessor = new OMRSEventPublisher(cohortName,
-                                                                                       eventProtocolVersion,
                                                                                        cohortTopicConnector);
 
             /*
@@ -155,7 +150,6 @@ public class OMRSCohortManager
                      * other members of the cohort can receive events from the local server's repository.
                      */
                     OMRSEventPublisher repositoryEventPublisher = new OMRSEventPublisher(cohortName,
-                                                                                         eventProtocolVersion,
                                                                                          cohortTopicConnector);
 
 
@@ -191,7 +185,7 @@ public class OMRSCohortManager
                                                localServerType,
                                                localOrganizationName,
                                                outboundRegistryEventProcessor,
-                                               null,
+                                               cohortRegistryStore,
                                                connectionConsumer);
             }
 
@@ -202,8 +196,7 @@ public class OMRSCohortManager
             if (enterpriseTopicConnector != null)
             {
                 OMRSEventPublisher enterpriseEventPublisher = new OMRSEventPublisher("OMAS Enterprise Access",
-                                                                                     eventProtocolVersion,
-                                                                                     cohortTopicConnector);
+                                                                                     enterpriseTopicConnector);
 
                 this.cohortRepositoryEventManager.registerInstanceProcessor(enterpriseEventPublisher);
             }

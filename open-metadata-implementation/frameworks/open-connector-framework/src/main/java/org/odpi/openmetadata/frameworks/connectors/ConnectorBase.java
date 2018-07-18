@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 package org.odpi.openmetadata.frameworks.connectors;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.odpi.openmetadata.frameworks.connectors.ffdc.ConnectorCheckedException;
 import org.odpi.openmetadata.frameworks.connectors.properties.AdditionalProperties;
 import org.odpi.openmetadata.frameworks.connectors.properties.ConnectedAssetProperties;
@@ -9,6 +10,7 @@ import org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperti
 import org.odpi.openmetadata.frameworks.connectors.ffdc.PropertyServerException;
 import org.odpi.openmetadata.frameworks.connectors.properties.beans.Connection;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -46,12 +48,12 @@ public abstract class ConnectorBase extends Connector
      */
     protected AdditionalProperties securedProperties = null;
 
-    private static final Logger   log = Logger.getLogger(ConnectorBase.class);
+    private static final Logger   log = LoggerFactory.getLogger(ConnectorBase.class);
 
     private        final int      hashCode = UUID.randomUUID().hashCode();
 
     /**
-     * Typical Constructor Connectors should always have a constructor requiring no parameters and perform
+     * Typical Constructor: Connectors should always have a constructor requiring no parameters and perform
      * initialization in the initialize method.
      */
     public  ConnectorBase()
@@ -234,17 +236,18 @@ public abstract class ConnectorBase extends Connector
                 "connectorInstanceId='" + connectorInstanceId + '\'' +
                 ", connectionProperties=" + connectionProperties +
                 ", connectedAssetProperties=" + connectedAssetProperties +
+                ", isActive=" + isActive +
+                ", hashCode=" + hashCode +
                 '}';
     }
-
 
     /**
      * ProtectedConnection provides a subclass to Connection in order to extract protected values from the
      * connection in order to supply them to the Connector implementation.
      */
-    private class ProtectedConnection extends ConnectionProperties
+    protected class ProtectedConnection extends ConnectionProperties
     {
-        private ProtectedConnection(ConnectionProperties templateConnection)
+        protected ProtectedConnection(ConnectionProperties templateConnection)
         {
             super(templateConnection);
         }

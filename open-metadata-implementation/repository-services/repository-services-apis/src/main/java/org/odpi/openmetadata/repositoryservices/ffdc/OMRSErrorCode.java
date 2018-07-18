@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 package org.odpi.openmetadata.repositoryservices.ffdc;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -308,6 +309,10 @@ public enum OMRSErrorCode
                                  "Review previous error messages to determine the precise error in the " +
                                  "start up configuration. " +
                                  "Correct the configuration and reconnect the server to the cohort. "),
+    NO_EVENT_BUS_CONNECTORS(400, "OMRS-CONNECTOR-400-001 ",
+            "The connector {0} has been configured without an embedded event bus connector",
+            "There is an error in the connection for this connector. The connection is defined in the server's configuration document.",
+            "Review the configuration document and correct the definition of the connection."),
     NULL_REGISTRY_STORE(400, "OMRS-COHORT-REGISTRY-404-001 ",
             "The Open Metadata Repository Cohort Registry Store for cohort {0} is not available.",
             "The system is unable to process registration requests from the open metadata repository cohort.",
@@ -471,7 +476,7 @@ public enum OMRSErrorCode
             "The system is not able to process events sent between repositories in the open metadata cohort.",
             "Correct the configuration for the OMRS Topic Connector (in the OMRS Configuration). Retry the request when the topic connector configuration is correct."),
     REMOTE_REPOSITORY_ERROR(404, "OMRS-REST-REPOSITORY-CONNECTOR-404-001 ",
-            "A call to the {0} of the open metadata repository server {1} results in an exception with message {2}",
+            "A call to the {0} of the open metadata repository server {1} results in an exception {2} with message {3}",
             "The system is unable to retrieve any metadata properties from this repository.",
             "Retry the request when the repository server is available."),
     ENTERPRISE_NOT_SUPPORTED(405, "OMRS-ENTERPRISE-REPOSITORY-CONNECTOR-405-001 ",
@@ -587,11 +592,32 @@ public enum OMRSErrorCode
             "A remote open metadata repository {0} returned a null metadata collection identifier on its REST API.  It registered with the cohort using a metadata collection identifier of {1}",
             "There is an internal error in the remote open metadata repository.",
              "Raise a Jira to get this fixed."),
+    NULL_OPEN_METADATA_TOPIC_LISTENER(500, "OPEN-METADATA-TOPIC-CONNECTOR-500-001 ",
+            "A null topic listener has been passed to the {0} open metadata topic connector {1}",
+            "There is an internal error in the open metadata repository.",
+            "Raise a Jira to get this fixed."),
+    NULL_OMRS_TOPIC_LISTENER(500, "OMRS-TOPIC-CONNECTOR-500-001 ",
+            "A null topic listener has been passed to the open metadata topic connector {0}",
+            "There is an internal error in the open metadata repository.",
+            "Raise a Jira to get this fixed."),
+    OMRS_TOPIC_SEND_EVENT_FAILED(500, "OMRS-TOPIC-CONNECTOR-500-002 ",
+            "Connector {0} received an unexpected exception from sending event {1}. The exception message was: {2}",
+            "There is an internal error in the open metadata repository.",
+            "Raise a Jira to get this fixed."),
+    OMRS_TOPIC_SEND_NULL_EVENT(500, "OMRS-TOPIC-CONNECTOR-500-002 ",
+             "Connector {0} is unable to send a null event",
+             "There is an internal error in the open metadata repository.",
+             "Raise a Jira to get this fixed."),
     METHOD_NOT_IMPLEMENTED(501, "OMRS-METADATA-COLLECTION-501-001 ",
-            "OMRSMetadataInstanceStore method {0} for OMRS Connector {1} to repository type {2} is not implemented.",
+            "OMRSMetadataInstanceStore method {0} for OMRS Connector {1} to repository type {2} is not implemented",
             "A method in MetadataCollectionBase was called which means that the connector's OMRSMetadataInstanceStore " +
                                    "(a subclass of MetadataCollectionBase) does not have a complete implementation.",
             "Raise a Jira to get this fixed."),
+    OMRS_UNSUPPORTED_EVENT_PROTOCOL(501, "OMRS-TOPIC-CONNECTOR-501-001 ",
+            "Connector {0} is not able to support event protocol {1}",
+            "This server does not support the requested event protocol level.",
+            "The protocol level is set in the configuration.  The admin services should not allow a protocol level that is not supported by its local OMRS." +
+                                            " Raise a Jira to get this fixed."),
     NO_REPOSITORIES(503, "OMRS-ENTERPRISE-REPOSITORY-503-001 ",
             "There are no open metadata repositories available for access service {0}.",
             "The configuration for the server is set up so there is no local repository and no remote repositories " +
@@ -646,8 +672,8 @@ public enum OMRSErrorCode
              "Raise a Jira to get this fixed."),
     NO_LOCAL_REPOSITORY(503, "OMRS-REST-API-503-001 ",
             "There is no local repository to support REST API call {0}",
-            "The server has received a call on its open metadata repository REST API services but is unable to process it because the local repository is not active.",
-            "If the server is supposed to have a local repository correct the server configuration and restart the server."),
+            "The server has received a call on its open metadata repository REST API services but is unable to process it because the local repository is not active.  This may be because the open metadata services have not been activated.",
+            "Ensure that the open metadata services have been activated in the server. If they are active and the server is supposed to have a local repository, correct the server's configuration document to include a local repository and activate the open metadata services."),
     NULL_RESPONSE_FROM_API(503, "OMRS-REST-API-503-002 ",
             "A null response was received from REST API call {0} to repository {1}",
             "The server has issued a call to the open metadata repository REST API services in a remote repository and has received a null response.",
@@ -665,7 +691,7 @@ public enum OMRSErrorCode
     private String systemAction;
     private String userAction;
 
-    private static final Logger log = Logger.getLogger(OMRSErrorCode.class);
+    private static final Logger log = LoggerFactory.getLogger(OMRSErrorCode.class);
 
 
     /**
@@ -728,18 +754,12 @@ public enum OMRSErrorCode
      */
     public String getFormattedErrorMessage(String... params)
     {
-        if (log.isDebugEnabled())
-        {
-            log.debug(String.format("<== OMRSErrorCode.getMessage(%s)", Arrays.toString(params)));
-        }
+        log.debug(String.format("<== OMRSErrorCode.getMessage(%s)", Arrays.toString(params)));
 
         MessageFormat mf = new MessageFormat(errorMessage);
         String result = mf.format(params);
 
-        if (log.isDebugEnabled())
-        {
-            log.debug(String.format("==> OMRSErrorCode.getMessage(%s): %s", Arrays.toString(params), result));
-        }
+        log.debug(String.format("==> OMRSErrorCode.getMessage(%s): %s", Arrays.toString(params), result));
 
         return result;
     }
@@ -765,5 +785,23 @@ public enum OMRSErrorCode
     public String getUserAction()
     {
         return userAction;
+    }
+
+
+    /**
+     * toString() JSON-style
+     *
+     * @return string description
+     */
+    @Override
+    public String toString()
+    {
+        return "OMRSErrorCode{" +
+                "httpErrorCode=" + httpErrorCode +
+                ", errorMessageId='" + errorMessageId + '\'' +
+                ", errorMessage='" + errorMessage + '\'' +
+                ", systemAction='" + systemAction + '\'' +
+                ", userAction='" + userAction + '\'' +
+                '}';
     }
 }

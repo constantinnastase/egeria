@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 package org.odpi.openmetadata.repositoryservices.metadatahighway;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.odpi.openmetadata.adminservices.configuration.properties.OpenMetadataEventProtocolVersion;
 import org.odpi.openmetadata.frameworks.connectors.Connector;
 import org.odpi.openmetadata.frameworks.connectors.ConnectorBroker;
 import org.odpi.openmetadata.frameworks.connectors.properties.ConnectionProperties;
@@ -10,6 +12,7 @@ import org.odpi.openmetadata.frameworks.connectors.properties.beans.Connection;
 import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditCode;
 import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditLog;
 import org.odpi.openmetadata.repositoryservices.auditlog.OMRSAuditingComponent;
+import org.odpi.openmetadata.repositoryservices.events.OMRSEventProtocolVersion;
 import org.odpi.openmetadata.repositoryservices.ffdc.exception.OMRSLogicErrorException;
 import org.odpi.openmetadata.repositoryservices.connectors.omrstopic.OMRSTopicConnector;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.cohortregistrystore.OMRSCohortRegistryStore;
@@ -41,7 +44,7 @@ public class OMRSMetadataHighwayManager
 
     private static final OMRSAuditLog auditLog = new OMRSAuditLog(OMRSAuditingComponent.METADATA_HIGHWAY_MANAGER);
 
-    private static final Logger log = Logger.getLogger(OMRSMetadataHighwayManager.class);
+    private static final Logger log = LoggerFactory.getLogger(OMRSMetadataHighwayManager.class);
 
     /**
      * Constructor taking the values that are used in every cohort.  Any of these values may be null.
@@ -166,7 +169,8 @@ public class OMRSMetadataHighwayManager
 
             OMRSTopicConnector cohortTopicConnector
                     = getTopicConnector(cohortConfig.getCohortName(),
-                                        cohortConfig.getCohortOMRSTopicConnection());
+                                        cohortConfig.getCohortOMRSTopicConnection(),
+                                        cohortConfig.getCohortOMRSTopicProtocolVersion());
 
             OMRSRepositoryEventExchangeRule inboundEventExchangeRule
                     = new OMRSRepositoryEventExchangeRule(cohortConfig.getCohortName() + " Events To Process",
@@ -185,7 +189,6 @@ public class OMRSMetadataHighwayManager
                                      enterpriseAccessTopicConnector,
                                      cohortRegistryStore,
                                      cohortTopicConnector,
-                                     cohortConfig.getCohortOMRSTopicProtocolVersion(),
                                      inboundEventExchangeRule);
 
             /*
@@ -199,7 +202,7 @@ public class OMRSMetadataHighwayManager
             auditLog.logRecord(actionDescription,
                                auditCode.getLogMessageId(),
                                auditCode.getSeverity(),
-                               auditCode.getFormattedLogMessage(cohortConfig.getCohortName()),
+                               auditCode.getFormattedLogMessage(cohortConfig.getCohortName(), error.getErrorMessage()),
                                null,
                                auditCode.getSystemAction(),
                                auditCode.getUserAction());
@@ -383,15 +386,23 @@ public class OMRSMetadataHighwayManager
      * @param topicConnection connection parameters
      * @return OMRSTopicConnector for managing communications with the event/messaging infrastructure.
      */
-    private OMRSTopicConnector getTopicConnector(String     cohortName,
-                                                 Connection topicConnection)
+    private OMRSTopicConnector getTopicConnector(String                           cohortName,
+                                                 Connection                       topicConnection,
+                                                 OpenMetadataEventProtocolVersion protocolVersion)
     {
         try
         {
             ConnectorBroker    connectorBroker = new ConnectorBroker();
             Connector          connector       = connectorBroker.getConnector(topicConnection);
 
-            return (OMRSTopicConnector)connector;
+            OMRSTopicConnector topicConnector  = (OMRSTopicConnector)connector;
+
+            if (protocolVersion == OpenMetadataEventProtocolVersion.V1)
+            {
+                topicConnector.setEventProtocolLevel(OMRSEventProtocolVersion.V1);
+            }
+
+            return topicConnector;
         }
         catch (Throwable   error)
         {

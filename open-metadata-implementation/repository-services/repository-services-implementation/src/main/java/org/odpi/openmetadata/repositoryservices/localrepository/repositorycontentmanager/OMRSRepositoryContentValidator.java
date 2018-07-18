@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 package org.odpi.openmetadata.repositoryservices.localrepository.repositorycontentmanager;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.odpi.openmetadata.repositoryservices.ffdc.OMRSErrorCode;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.MatchCriteria;
 import org.odpi.openmetadata.repositoryservices.connectors.stores.metadatacollectionstore.properties.instances.*;
@@ -24,7 +25,7 @@ public class OMRSRepositoryContentValidator implements OMRSRepositoryValidator
 
     private        OMRSRepositoryContentManager    repositoryContentManager;
 
-    private static final Logger log = Logger.getLogger(OMRSRepositoryContentValidator.class);
+    private static final Logger log = LoggerFactory.getLogger(OMRSRepositoryContentValidator.class);
 
 
 
@@ -1814,7 +1815,7 @@ public class OMRSRepositoryContentValidator implements OMRSRepositoryValidator
 
         if (typeDef.getCategory() != null)
         {
-            typeDefCategoryName = typeDef.getCategory().getTypeName();
+            typeDefCategoryName = typeDef.getCategory().getName();
         }
 
         List<TypeDefAttribute> typeDefAttributes = repositoryContentManager.getAllPropertiesForTypeDef(sourceName,
@@ -1941,7 +1942,7 @@ public class OMRSRepositoryContentValidator implements OMRSRepositoryValidator
             }
 
             boolean  validPropertyType = false;
-            String   validPropertyTypeName = propertyType.getTypeName();
+            String   validPropertyTypeName = propertyType.getName();
 
             switch (propertyType)
             {
@@ -1986,7 +1987,7 @@ public class OMRSRepositoryContentValidator implements OMRSRepositoryValidator
                 OMRSErrorCode errorCode    = OMRSErrorCode.BAD_PROPERTY_TYPE;
                 String        errorMessage = errorCode.getErrorMessageId()
                                            + errorCode.getFormattedErrorMessage(propertyName,
-                                                                                propertyType.getTypeName(),
+                                                                                propertyType.getName(),
                                                                                 typeDefCategoryName,
                                                                                 typeDefName,
                                                                                 validPropertyTypeName,
@@ -2475,7 +2476,7 @@ public class OMRSRepositoryContentValidator implements OMRSRepositoryValidator
 
                 OMRSErrorCode errorCode = OMRSErrorCode.BAD_INSTANCE_STATUS;
                 String errorMessage = errorCode.getErrorMessageId()
-                                    + errorCode.getFormattedErrorMessage(instanceStatus.getStatusName(),
+                                    + errorCode.getFormattedErrorMessage(instanceStatus.getName(),
                                                                          instanceStatusParameterName,
                                                                          methodName,
                                                                          sourceName,
